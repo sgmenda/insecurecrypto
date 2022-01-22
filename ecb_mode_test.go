@@ -6,11 +6,19 @@ import (
 )
 
 func isECBConsistent(pt, key []byte, t *testing.T) {
-	encDec := aes128ECBDecrypt(aes128ECBEncrypt(pt, key), key)
-	if !bytes.Equal(encDec, pt) {
-		t.Errorf("ECB mode is inconsistent!\nexpected:\n%x\ngot:\n%x",
+	enc, err := Aes128ECBEncrypt(pt, key)
+	if err != nil {
+		t.Errorf("ecb encryption failed: %s", err)
+	}
+	dec, err := Aes128ECBDecrypt(enc, key)
+	if err != nil {
+		t.Errorf("ecb decryption failed: %s", err)
+	}
+
+	if !bytes.Equal(dec, pt) {
+		t.Errorf("ecb mode is inconsistent!\nexpected:\n%x\ngot:\n%x",
 			pt,
-			encDec)
+			dec)
 	}
 }
 

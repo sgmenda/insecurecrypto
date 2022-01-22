@@ -2,40 +2,51 @@ package insecurecrypto
 
 import (
 	"crypto/aes"
-	"log"
+	"errors"
+	"fmt"
 )
 
-func Aes128ECBEncrypt(pt, key []byte) []byte {
-	cipher, _ := aes.NewCipher(key)
-	blockSize := 16
+const blockSize = 16
+
+func Aes128ECBEncrypt(pt, key []byte) ([]byte, error) {
+	block, err := aes.NewCipher(key)
+	if err != nil {
+		return nil, errors.New("failed to initialize cipher")
+	}
 
 	// Pad input to a multiple of block size
-	paddedTargetBytes := padToMultipleOfBlockSize(pt, byte(blockSize))
+	paddedPt := padToMultipleOfBlockSize(pt, byte(blockSize))
 
-	ct := make([]byte, len(paddedTargetBytes))
+	ct := make([]byte, len(paddedPt))
 
 	// Enumerate the blocks, decrypting and adding to pt
-	for blockBegin, blockEnd := 0, blockSize; blockEnd <= len(paddedTargetBytes); blockBegin, blockEnd = blockEnd, blockEnd+blockSize {
-		cipher.Encrypt(ct[blockBegin:blockEnd], paddedTargetBytes[blockBegin:blockEnd])
+	for blockBegin, blockEnd := 0, blockSize; blockEnd <= len(paddedPt); blockBegin, blockEnd = blockEnd, blockEnd+blockSize {
+		block.Encrypt(ct[blockBegin:blockEnd], paddedPt[blockBegin:blockEnd])
 	}
-	return ct
+	return ct, nil
 }
 
-func Aes128ECBDecrypt(ct, key []byte) []byte {
-	cipher, _ := aes.NewCipher(key)
+func Aes128ECBDecrypt(ct, key []byte) ([]byte, error) {
+	if (len(ct) < blockSize) || (len(ct)%blockSize != 0) {
+		panic("invalid ecb ciphertext length")
+	}
+
+	block, err := aes.NewCipher(key)
+	if err != nil {
+		return nil, errors.New("failed to initialize cipher")
+	}
+
 	pt := make([]byte, len(ct))
-	blockSize := 16
 
 	// Enumerate the blocks, decrypting and adding to pt
 	for blockBegin, blockEnd := 0, blockSize; blockEnd <= len(ct); blockBegin, blockEnd = blockEnd, blockEnd+blockSize {
-		cipher.Decrypt(pt[blockBegin:blockEnd], ct[blockBegin:blockEnd])
+		block.Decrypt(pt[blockBegin:blockEnd], ct[blockBegin:blockEnd])
 	}
 
 	// Remove padding and return result if succeeded
-	d, e := removePadding(pt)
-	if e != nil {
-		log.Println("Failed to remove padding with error ", e)
-		return nil
+	d, err := removePadding(pt)
+	if err != nil {
+		return nil, fmt.Errorf("failed to remove padding with error: %s", err)
 	}
-	return d
+	return d, nil
 }
