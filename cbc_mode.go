@@ -49,3 +49,28 @@ func Aes128CBCDecrypt(ct, key []byte) ([]byte, error) {
 	}
 	return d, nil
 }
+
+func Aes128CBCPaddingOracle(ct, key []byte) (bool, error) {
+
+	if (len(ct) < 2*blockSize) || (len(ct)%blockSize != 0) {
+		return false, errors.New("invalid ciphertext length")
+	}
+
+	block, err := aes.NewCipher(key)
+	if err != nil {
+		return false, errors.New("failed to initialize cipher")
+	}
+
+	iv := ct[:blockSize]
+	pt := make([]byte, len(ct)-blockSize)
+
+	cbcmode := cipher.NewCBCDecrypter(block, iv)
+	cbcmode.CryptBlocks(pt, ct[blockSize:])
+
+	// Return true if padded correctly and false if padded incorrectly
+	_, err = removePadding(pt)
+	if err == nil {
+		return true, nil
+	}
+	return false, nil
+}
