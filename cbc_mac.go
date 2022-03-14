@@ -4,16 +4,20 @@ import (
 	"crypto/aes"
 	"crypto/des"
 	"errors"
+	"fmt"
 )
 
-func CbcMacHash(key, message []byte) ([]byte, error) {
+func Aes128CbcMacHash(key, message []byte) ([]byte, error) {
 	block, err := aes.NewCipher(key)
 	if err != nil {
 		return nil, errors.New("failed to initialize cipher")
 	}
 
 	// Pad input to a multiple of block size
-	paddedMessage := padToMultipleOfBlockSize(message, byte(block.BlockSize()))
+	paddedMessage, err := AddPadding(message, byte(block.BlockSize()))
+	if err != nil {
+		return nil, fmt.Errorf("failed to add padding: %s", err)
+	}
 	if len(key) == 8 {
 		paddedMessage = message
 	}
@@ -31,7 +35,7 @@ func CbcMacHash(key, message []byte) ([]byte, error) {
 	return prevBlock, nil
 }
 
-func cbcMacHashWithDesForTesting(key, message []byte) ([]byte, error) {
+func desCbcMacHashForTesting(key, message []byte) ([]byte, error) {
 	block, err := des.NewCipher(key)
 	if err != nil {
 		return nil, errors.New("failed to initialize cipher")

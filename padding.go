@@ -5,22 +5,26 @@ import (
 	"fmt"
 )
 
-func pkcs7Padding(input []byte, targetLength byte) []byte {
+func pkcs7Padding(input []byte, targetLength byte) ([]byte, error) {
 	if int(targetLength) < len(input) {
-		panic("Padding target length less than input length!")
+		panic("padding target length less than input length!")
 	}
 	paddingLength := targetLength - byte(len(input))
 	for i := byte(0); i < paddingLength; i++ {
 		input = append(input, byte(paddingLength))
 	}
-	return input
+	return input, nil
 }
 
-func padToMultipleOfBlockSize(input []byte, blockSize byte) []byte {
+// Adds PKCS7 padding.
+func AddPadding(input []byte, blockSize byte) ([]byte, error) {
 	// We only need to pad the last block.
 	lastBlockLength := byte(len(input) % int(blockSize))
 	lastBlock := input[len(input)-int(lastBlockLength):]
-	paddedLastBlock := pkcs7Padding(lastBlock, blockSize)
+	paddedLastBlock, err := pkcs7Padding(lastBlock, blockSize)
+	if err != nil {
+		return nil, err
+	}
 
 	// The output is first N-1 blocks and the padded last block
 	paddedInput := append(input[0:len(input)-int(lastBlockLength)], paddedLastBlock...)
@@ -32,10 +36,11 @@ func padToMultipleOfBlockSize(input []byte, blockSize byte) []byte {
 	if len(paddedInput) == len(input) {
 		panic("Length of padded input is same as length of input.")
 	}
-	return paddedInput
+	return paddedInput, nil
 }
 
-func removePadding(input []byte) ([]byte, error) {
+// Removes PKCS7 padding.
+func RemovePadding(input []byte) ([]byte, error) {
 	amountOfPadding := input[len(input)-1]
 	if (int(amountOfPadding) > len(input)) || (int(amountOfPadding) == 0) {
 		return nil, errors.New("invalid padding")

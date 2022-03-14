@@ -15,7 +15,10 @@ func Aes128ECBEncrypt(pt, key []byte) ([]byte, error) {
 	}
 
 	// Pad input to a multiple of block size
-	paddedPt := padToMultipleOfBlockSize(pt, byte(blockSize))
+	paddedPt, err := AddPadding(pt, byte(blockSize))
+	if err != nil {
+		return nil, fmt.Errorf("failed to add padding: %s", err)
+	}
 
 	ct := make([]byte, len(paddedPt))
 
@@ -44,7 +47,7 @@ func Aes128ECBDecrypt(ct, key []byte) ([]byte, error) {
 	}
 
 	// Remove padding and return result if succeeded
-	d, err := removePadding(pt)
+	d, err := RemovePadding(pt)
 	if err != nil {
 		return nil, fmt.Errorf("failed to remove padding with error: %s", err)
 	}

@@ -18,7 +18,7 @@ func TestCbcMac(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	got, err := cbcMacHashWithDesForTesting(key, message)
+	got, err := desCbcMacHashForTesting(key, message)
 	if err != nil {
 		t.Fatal(err)
 	}

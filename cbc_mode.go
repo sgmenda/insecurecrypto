@@ -14,7 +14,10 @@ func Aes128CBCEncrypt(pt, key, iv []byte) ([]byte, error) {
 	}
 
 	// Pad input to a multiple of block size
-	paddedPt := padToMultipleOfBlockSize(pt, byte(blockSize))
+	paddedPt, err := AddPadding(pt, byte(blockSize))
+	if err != nil {
+		return nil, fmt.Errorf("failed to add padding: %s", err)
+	}
 
 	ct := make([]byte, len(paddedPt)+blockSize) // +blockSize to include iv in ct
 	copy(ct[:blockSize], iv)
@@ -43,7 +46,7 @@ func Aes128CBCDecrypt(ct, key []byte) ([]byte, error) {
 	cbcmode.CryptBlocks(pt, ct[blockSize:])
 
 	// Remove padding and return result if succeeded
-	d, err := removePadding(pt)
+	d, err := RemovePadding(pt)
 	if err != nil {
 		return nil, fmt.Errorf("failed to remove padding with error: %s", err)
 	}
@@ -68,7 +71,7 @@ func Aes128CBCPaddingOracle(ct, key []byte) (bool, error) {
 	cbcmode.CryptBlocks(pt, ct[blockSize:])
 
 	// Return true if padded correctly and false if padded incorrectly
-	_, err = removePadding(pt)
+	_, err = RemovePadding(pt)
 	if err == nil {
 		return true, nil
 	}

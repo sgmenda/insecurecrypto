@@ -6,7 +6,11 @@ import (
 )
 
 func isPaddingConsistent(in []byte, t *testing.T) {
-	padThenUnpad, err := removePadding(padToMultipleOfBlockSize(in, 16))
+	padded, err := AddPadding(in, 16)
+	if err != nil {
+		t.Errorf("Got unexpected error: %s", err)
+	}
+	padThenUnpad, err := RemovePadding(padded)
 	if err != nil {
 		t.Errorf("Got unexpected error: %s", err)
 	}
@@ -21,7 +25,10 @@ func TestPadding(t *testing.T) {
 		"padding is correct",
 		func(t *testing.T) {
 			testString := []byte("I LIKE TO PAD MY MESSAGES")
-			got := pkcs7Padding(testString, 30)
+			got, err := pkcs7Padding(testString, 30)
+			if err != nil {
+				t.Errorf("Got unexpected error: %s", err)
+			}
 
 			expectString := []byte("I LIKE TO PAD MY MESSAGES\x05\x05\x05\x05\x05")
 			if !bytes.Equal(got, expectString) {
