@@ -18,9 +18,6 @@ func Aes128CbcMacHash(key, message []byte) ([]byte, error) {
 	if err != nil {
 		return nil, fmt.Errorf("failed to add padding: %s", err)
 	}
-	if len(key) == 8 {
-		paddedMessage = message
-	}
 
 	// init previous block to 0..0
 	prevBlock := make([]byte, block.BlockSize())
